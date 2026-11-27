@@ -4,8 +4,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![RxJS](https://img.shields.io/badge/RxJS-7-B7178C?logo=reactivex&logoColor=white)
 ![Vercel](https://img.shields.io/badge/deploy-Vercel-000000?logo=vercel&logoColor=white)
+[![CI](https://github.com/lucaszimmerman/ecotech-angular/actions/workflows/ci.yml/badge.svg)](https://github.com/lucaszimmerman/ecotech-angular/actions/workflows/ci.yml)
 
-Rede social para quem quer compartilhar iniciativas de sustentabilidade e encontrar pessoas que fazem a diferença. Este repositório é o **frontend em Angular**; a API em Spring Boot fica no repositório `ecotech-api` e está publicada no Render.
+Rede social para quem quer compartilhar iniciativas de sustentabilidade e encontrar pessoas que fazem a diferença. Este repositório é o **frontend em Angular**; a API em Spring Boot fica em [ecotech-spring-api](https://github.com/lucaszimmerman/ecotech-spring-api) e está publicada no Render.
+
+**[Acessar a EcoTech ↗](https://ecotech-angular.vercel.app)** · [Swagger da API](https://ecotech-spring-api.onrender.com/swagger-ui/index.html)
+
+> No primeiro acesso a API pode levar cerca de um minuto para acordar (Render Free). A tela mostra um aviso enquanto isso.
 
 ![Tela de login](docs/screenshots/login.webp)
 
