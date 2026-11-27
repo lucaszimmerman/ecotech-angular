@@ -1,0 +1,9 @@
+<div class="app-shell" [class.dark-mode]="theme.darkMode | async">
+  @if (activity.slow | async) {
+    <p class="server-wake" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      O servidor da EcoTech está iniciando. A primeira resposta pode levar até um minuto.
+    </p>
+  }
+  <router-outlet></router-outlet>
+</div>

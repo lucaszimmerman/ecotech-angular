@@ -1,0 +1,27 @@
+<app-nav-bar></app-nav-bar>
+<div class="layout">
+  <app-left-bar></app-left-bar>
+  @if (mode | async; as feed) {
+    <main class="column">
+      <header class="feed-header">
+        <h1>Feed</h1>
+        <nav class="tabs" aria-label="Tipo de feed">
+          <a
+            routerLink="/home"
+            [attr.aria-current]="feed === 'feed' ? 'page' : null"
+            >Seguindo</a
+          >
+          <a
+            routerLink="/home"
+            [queryParams]="{ vista: 'todos' }"
+            [attr.aria-current]="feed === 'all' ? 'page' : null"
+            >Explorar</a
+          >
+        </nav>
+      </header>
+      <app-share></app-share>
+      <app-posts [scope]="feed"></app-posts>
+    </main>
+  }
+  <app-right-bar></app-right-bar>
+</div>

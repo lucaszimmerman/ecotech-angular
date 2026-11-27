@@ -1,0 +1,248 @@
+<main class="welcome">
+  <header class="welcome-bar">
+    <a class="brand" routerLink="/home"
+      ><span class="brand-mark" aria-hidden="true"></span>EcoTech</a
+    >
+    @if (step) {
+      <button
+        class="quiet"
+        type="button"
+        [disabled]="request.busy"
+        (click)="finish()"
+      >
+        Fazer depois
+      </button>
+    }
+  </header>
+
+  <div class="welcome-layout">
+    <aside class="welcome-progress" aria-label="Progresso da configuração">
+      <p class="welcome-kicker">Boas-vindas</p>
+      <ol>
+        @for (item of steps; track item; let index = $index) {
+          <li
+            [class.current]="index === stepIndex"
+            [class.past]="index < stepIndex"
+            [attr.aria-current]="index === stepIndex ? 'step' : null"
+          >
+            <span class="step-number" aria-hidden="true">{{ index + 1 }}</span>
+            <span>{{ item.label }}</span>
+          </li>
+        }
+      </ol>
+    </aside>
+
+    <section
+      class="surface welcome-card"
+      [attr.aria-busy]="request.busy"
+      aria-labelledby="welcome-title"
+    >
+      @if (step) {
+        <p class="welcome-kicker">
+          Etapa {{ stepIndex + 1 }} de {{ steps.length }}
+        </p>
+      }
+      <h1 #stepHeading tabindex="-1" id="welcome-title">
+        {{ step?.heading || "Tudo pronto para começar" }}
+      </h1>
+
+      @switch (step?.key) {
+        @case ("dados") {
+          <p class="muted">
+            Conte um pouco sobre você. Todos os campos são opcionais.
+          </p>
+          <form #form="ngForm" (ngSubmit)="saveDetails()">
+            <fieldset [disabled]="request.busy || !!pendingSave">
+              <label
+                >Cidade
+                <input
+                  name="city"
+                  autocomplete="address-level2"
+                  maxlength="100"
+                  [(ngModel)]="details.city"
+              /></label>
+              <label
+                >Site
+                <input
+                  type="url"
+                  name="website"
+                  autocomplete="url"
+                  placeholder="https://exemplo.com"
+                  maxlength="255"
+                  [(ngModel)]="details.website"
+                  [attr.aria-invalid]="websiteInvalid"
+                  aria-describedby="welcome-site-hint"
+              /></label>
+              <p
+                id="welcome-site-hint"
+                [class.error]="websiteInvalid"
+                class="field-hint"
+              >
+                Use um endereço que comece com https:// ou http://.
+              </p>
+              <label
+                >Biografia
+                <textarea
+                  name="bio"
+                  rows="3"
+                  maxlength="500"
+                  [(ngModel)]="details.bio"
+                  placeholder="Escreva uma breve apresentação"
+                ></textarea>
+              </label>
+            </fieldset>
+            <div class="welcome-actions">
+              <button
+                class="quiet"
+                type="button"
+                [disabled]="request.busy"
+                (click)="move(1)"
+              >
+                Pular etapa
+              </button>
+              <button
+                class="primary"
+                type="submit"
+                [disabled]="
+                  form.invalid ||
+                  websiteInvalid ||
+                  request.busy ||
+                  !!pendingSave
+                "
+              >
+                {{ request.busy ? "Salvando…" : "Continuar" }}
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </form>
+        }
+        @case ("foto") {
+          <p class="muted">
+            Ajude outras pessoas a reconhecer você nas publicações e nos
+            comentários.
+          </p>
+          <div class="avatar-preview">
+            <img
+              class="avatar"
+              [src]="
+                preview ||
+                ($safeNavigationMigration(profile?.profileImageUrl) | mediaUrl)
+              "
+              width="100"
+              height="100"
+              alt="Prévia da foto de perfil"
+            />
+            <strong>{{ profile?.name }}</strong>
+          </div>
+          <ng-container *ngTemplateOutlet="upload"></ng-container>
+        }
+        @case ("capa") {
+          <p class="muted">
+            Escolha uma imagem horizontal para aparecer no topo do seu perfil.
+          </p>
+          <div class="cover welcome-cover">
+            @if (preview || profile?.coverImageUrl) {
+              <img
+                [src]="
+                  preview ||
+                  ($safeNavigationMigration(profile?.coverImageUrl) | mediaUrl)
+                "
+                alt="Prévia da foto de capa"
+              />
+            }
+          </div>
+          <ng-container *ngTemplateOutlet="upload"></ng-container>
+        }
+        @default {
+          <p class="muted">
+            Você pode editar seu perfil a qualquer momento pela página da sua
+            conta.
+          </p>
+          <div class="welcome-actions">
+            @if (profile; as user) {
+              <a class="secondary-link" [routerLink]="['/perfil', user.id]"
+                >Ver meu perfil</a
+              >
+            }
+            <button class="primary" type="button" (click)="finish()">
+              Ir para o feed <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        }
+      }
+
+      <app-status
+        [state]="request"
+        [label]="pendingSave ? 'Conferindo perfil…' : 'Salvando etapa…'"
+      ></app-status>
+      @if (pendingSave) {
+        <button
+          class="secondary"
+          type="button"
+          [disabled]="request.busy"
+          (click)="checkSave()"
+        >
+          Conferir perfil
+        </button>
+      }
+    </section>
+  </div>
+</main>
+
+<ng-template #upload>
+  <form (ngSubmit)="saveImage()">
+    <div class="photo-controls">
+      <label class="file-trigger">
+        <app-icon name="image"></app-icon>{{ file ? "Escolher outra imagem" : "Escolher imagem" }}
+        <input
+          type="file"
+          class="visually-hidden"
+          [accept]="imageTypes"
+          [disabled]="request.busy || !!pendingSave"
+          aria-label="Escolher imagem"
+          aria-describedby="welcome-photo-hint"
+          (change)="selectImage($any($event.target))"
+        />
+      </label>
+      @if (file) {
+        <button
+          class="quiet"
+          type="button"
+          [disabled]="request.busy || !!pendingSave"
+          (click)="removeSelection()"
+        >
+          Remover seleção
+        </button>
+      }
+    </div>
+    <p id="welcome-photo-hint" class="field-hint">
+      {{ file ? file.name + " · " : "" }}JPG, PNG ou WebP de até 5 MB.
+    </p>
+    <div class="welcome-actions">
+      <button
+        class="quiet"
+        type="button"
+        [disabled]="request.busy"
+        (click)="move(-1)"
+      >
+        Voltar
+      </button>
+      <button
+        class="quiet"
+        type="button"
+        [disabled]="request.busy"
+        (click)="move(1)"
+      >
+        Pular etapa
+      </button>
+      <button
+        class="primary"
+        type="submit"
+        [disabled]="!file || request.busy || !!pendingSave"
+      >
+        {{ request.busy ? "Enviando…" : "Salvar e continuar" }}
+        <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  </form>
+</ng-template>

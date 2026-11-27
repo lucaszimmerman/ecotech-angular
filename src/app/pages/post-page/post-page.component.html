@@ -1,0 +1,17 @@
+<app-nav-bar></app-nav-bar>
+<div class="layout">
+  <app-left-bar></app-left-bar>
+  <main class="column">
+    <a class="back-link" routerLink="/home"><app-icon name="arrow-left"></app-icon>Voltar ao início</a>
+    <app-status
+      [state]="request"
+      [retry]="true"
+      [skeleton]="true"
+      (attempt)="load()"
+    ></app-status>
+    @if (post; as value) {
+      <app-post [post]="value" [showComments]="true"></app-post>
+    }
+  </main>
+  <app-right-bar></app-right-bar>
+</div>

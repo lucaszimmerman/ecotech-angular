@@ -1,0 +1,63 @@
+<section class="subsection column enter" aria-label="Comentários">
+  <h3>Comentários</h3>
+  @for (item of results.items; track trackId($index, item)) {
+    <article class="comment-card enter">
+      <header class="comment-header">
+        <a class="person" [routerLink]="['/perfil', item.user.id]">
+          <img class="avatar" [src]="item.user.profileImageUrl | mediaUrl" width="32" height="32" alt="" loading="lazy" />
+          <strong>{{ item.user.name }}</strong>
+        </a>
+        <small><time [attr.datetime]="item.createdAt">{{ item.createdAt | apiDate }}</time></small>
+        @if (canEdit(item)) {
+          <app-menu label="Opções do comentário">
+            <button type="button" class="menu-item" [disabled]="details.busy || mutation.busy" (click)="openEdit(item)">
+              <app-icon name="edit"></app-icon> {{ editing === item.id ? "Fechar edição" : "Editar comentário" }}
+            </button>
+            <button type="button" class="menu-item danger" [disabled]="mutation.busy || requiresCheck" (click)="delete(item)">
+              <app-icon name="trash"></app-icon> Excluir comentário
+            </button>
+          </app-menu>
+        }
+      </header>
+      @if (editing === item.id) {
+        <form (ngSubmit)="save()">
+          <label>Editar comentário
+            <textarea name="edited" rows="2" maxlength="500" [(ngModel)]="editText"></textarea>
+          </label>
+          <app-char-count [value]="editText" [min]="2" [max]="500"></app-char-count>
+          <div class="form-actions">
+            <button type="button" class="quiet" (click)="editing = null">Cancelar</button>
+            <button class="primary" [disabled]="editText.trim().length < 2 || mutation.busy || requiresCheck">Salvar</button>
+          </div>
+        </form>
+      } @else {
+        <p class="body-text">{{ item.content }}</p>
+      }
+    </article>
+  }
+  @if (results.total === 0) {
+    <p class="muted">Seja a primeira pessoa a comentar.</p>
+  }
+  @if (results.total && !results.last) {
+    <button type="button" [disabled]="results.request.busy" (click)="results.load()">Carregar mais comentários</button>
+  }
+  <app-status [state]="details"></app-status>
+  <app-status [state]="count" [retry]="true" (attempt)="reload()"></app-status>
+  <app-status [state]="results.request" [retry]="true" (attempt)="results.load()"></app-status>
+  @if (requiresCheck && !results.request.busy && !results.request.error) {
+    <button type="button" (click)="requiresCheck = false">Já conferi a lista</button>
+  }
+  <form class="comment-form" (ngSubmit)="create()">
+    <label>
+      <span class="visually-hidden">Escreva um comentário</span>
+      <textarea name="comment" rows="2" maxlength="500" placeholder="Escreva um comentário…" [(ngModel)]="draft"></textarea>
+    </label>
+    <div class="form-actions">
+      <app-char-count [value]="draft" [min]="2" [max]="500"></app-char-count>
+      <button class="primary" [disabled]="draft.trim().length < 2 || mutation.busy || requiresCheck">
+        <app-icon name="send"></app-icon> Comentar
+      </button>
+    </div>
+  </form>
+  <app-status [state]="mutation" label="Atualizando comentário…"></app-status>
+</section>

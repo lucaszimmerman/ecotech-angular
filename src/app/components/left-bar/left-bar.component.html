@@ -1,0 +1,14 @@
+<nav class="surface sidebar sidebar-nav" aria-label="Atalhos">
+  @if (auth.currentUser | async; as viewer) {
+    <a class="sidebar-profile person" [routerLink]="['/perfil', viewer.id]">
+      <img class="avatar" [src]="viewer.profileImageUrl | mediaUrl" width="42" height="42" alt="" />
+      <span><strong>{{ viewer.name }}</strong><small>&#64;{{ viewer.username }}</small></span>
+    </a>
+  }
+  @for (link of links(auth.currentUserValue?.id); track link.label) {
+    <a class="sidebar-link" [routerLink]="link.path" [queryParams]="link.query" routerLinkActive="active"
+      ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">
+      <app-icon [name]="link.icon"></app-icon>{{ link.label }}
+    </a>
+  }
+</nav>

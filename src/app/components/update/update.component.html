@@ -1,0 +1,39 @@
+<section class="surface enter profile-form">
+  <header class="subsection-header">
+    <h2>Editar informações</h2>
+    <button type="button" class="icon-button" aria-label="Fechar edição" title="Fechar" (click)="closed.emit()">
+      <app-icon name="close"></app-icon>
+    </button>
+  </header>
+  <form #details="ngForm" (ngSubmit)="save()">
+    <div class="form-grid">
+      <label>Nome
+        <input name="name" required minlength="2" maxlength="100" autocomplete="name" [(ngModel)]="form.name" />
+      </label>
+      <label>Nome de usuário
+        <input name="username" required minlength="3" maxlength="30" autocomplete="username" [(ngModel)]="form.username" />
+      </label>
+      <label>Cidade
+        <input name="city" maxlength="100" placeholder="Ex.: Florianópolis" [(ngModel)]="form.city" />
+      </label>
+      <label>Site
+        <input name="website" type="url" maxlength="255" placeholder="https://" [(ngModel)]="form.website" />
+      </label>
+    </div>
+    <label>Biografia
+      <textarea name="bio" rows="3" maxlength="500" placeholder="Conte um pouco sobre você e o que te move." [(ngModel)]="form.bio"></textarea>
+    </label>
+    <app-char-count [value]="form.bio" [max]="500"></app-char-count>
+    <p class="muted form-hint">A foto de perfil e a capa são trocadas direto nelas, pelo ícone de câmera.</p>
+    <div class="form-actions">
+      <button type="button" class="quiet" [disabled]="request.busy" (click)="closed.emit()">Cancelar</button>
+      <button class="primary" [disabled]="details.invalid || request.busy || refreshNeeded">Salvar alterações</button>
+    </div>
+  </form>
+  <app-status [state]="request" label="Atualizando perfil…"></app-status>
+  @if (refreshNeeded) {
+    <button type="button" [disabled]="request.busy" (click)="refresh()">
+      <app-icon name="refresh"></app-icon> Atualizar perfil
+    </button>
+  }
+</section>

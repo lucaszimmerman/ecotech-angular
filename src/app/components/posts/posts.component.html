@@ -1,0 +1,58 @@
+<section class="column" aria-label="Publicações">
+  <header class="list-header" [class.list-header-end]="!showTitle">
+    @if (showTitle) {
+      <h2>{{ title }}</h2>
+    }
+    <button
+      class="quiet list-refresh"
+      type="button"
+      [disabled]="results.request.busy"
+      (click)="reload()"
+    >
+      <app-icon name="refresh"></app-icon>
+      {{ pending ? "Ver atualizações" : "Atualizar publicações" }}
+    </button>
+  </header>
+  <app-status
+    [state]="results.request"
+    [skeleton]="!results.items.length"
+    [retry]="true"
+    (attempt)="results.load()"
+  ></app-status>
+  @if (notice) {
+    <p class="success enter" role="status">{{ notice }}</p>
+  }
+  @if (
+    results.total !== null && !results.items.length && !results.request.busy
+  ) {
+    <div class="surface empty-feed enter">
+      <span class="empty-icon"><app-icon name="compass"></app-icon></span>
+      <h3>Nenhuma publicação por aqui</h3>
+      @if (scope === "feed") {
+        <p class="muted">
+          Siga outros perfis para acompanhar o que eles compartilham.
+        </p>
+      }
+      @if (scope === "feed") {
+        <a
+          class="secondary-link"
+          routerLink="/home"
+          [queryParams]="{ vista: 'todos' }"
+          >Explorar publicações <app-icon name="chevron-right"></app-icon></a
+        >
+      }
+    </div>
+  }
+  @for (post of results.items; track trackId($index, post)) {
+    <app-post [post]="post"></app-post>
+  }
+  @if (results.total && !results.last) {
+    <button
+      type="button"
+      [disabled]="results.request.busy"
+      (click)="results.load()"
+    >
+      Carregar mais publicações
+    </button>
+  }
+</section>

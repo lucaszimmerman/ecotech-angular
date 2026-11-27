@@ -1,0 +1,197 @@
+<app-nav-bar></app-nav-bar>
+<div class="layout">
+  <app-left-bar></app-left-bar>
+  <main class="column">
+    <app-status
+      [state]="request"
+      [retry]="true"
+      [skeleton]="!profile"
+      (attempt)="load()"
+    ></app-status>
+    @if (profile; as person) {
+      <section class="surface profile-card">
+        <header class="profile-topbar">
+          <button type="button" class="icon-button" aria-label="Voltar" title="Voltar" (click)="back()">
+            <app-icon name="arrow-left"></app-icon>
+          </button>
+          <div>
+            <h2>{{ person.name }}</h2>
+            @if (feed.results.total !== null) {
+              <small>{{ feed.results.total }} {{ feed.results.total === 1 ? "publicação" : "publicações" }}</small>
+            }
+          </div>
+        </header>
+        <div class="cover" [class.is-preview]="draft.kind === 'cover'">
+          @if (draft.previewFor("cover"); as preview) {
+            <img [src]="preview" alt="Prévia da nova capa" />
+          } @else if (person.coverImageUrl && !coverFailed) {
+            <img
+              [src]="person.coverImageUrl | mediaUrl"
+              alt=""
+              (error)="renewImage(true)"
+            />
+          }
+          @if (own && !draft.kind) {
+            <label class="photo-button cover-button">
+              <app-icon name="camera"></app-icon>
+              <span>{{ person.coverImageUrl ? "Editar capa" : "Adicionar capa" }}</span>
+              <input
+                #coverInput
+                class="visually-hidden"
+                type="file"
+                [accept]="imageTypes"
+                [disabled]="photo.busy"
+                (change)="pickImage('cover', coverInput)"
+              />
+            </label>
+          }
+        </div>
+        <div class="profile-head">
+          <div class="avatar-frame" [class.is-preview]="draft.kind === 'profile'">
+            <img
+              class="avatar profile-avatar"
+              [src]="draft.previewFor('profile') || ((avatarFailed ? null : person.profileImageUrl) | mediaUrl)"
+              width="112"
+              height="112"
+              alt=""
+              (error)="renewImage()"
+            />
+            @if (own && !draft.kind) {
+              <label class="photo-button avatar-button" title="Alterar foto de perfil">
+                <app-icon name="camera"></app-icon>
+                <span class="visually-hidden">Alterar foto de perfil</span>
+                <input
+                  #avatarInput
+                  class="visually-hidden"
+                  type="file"
+                  [accept]="imageTypes"
+                  [disabled]="photo.busy"
+                  (change)="pickImage('profile', avatarInput)"
+                />
+              </label>
+            }
+          </div>
+          <div class="profile-actions">
+            @if (own) {
+              <button class="pill" type="button" [attr.aria-expanded]="editing" (click)="editing = !editing">
+                {{ editing ? "Fechar edição" : "Editar perfil" }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="pill follow-button"
+                [class.is-following]="following"
+                [attr.aria-pressed]="following === true"
+                [attr.aria-label]="following ? 'Deixar de seguir ' + person.name : 'Seguir ' + person.name"
+                [disabled]="following === null || followChange.busy"
+                (click)="toggleFollow()"
+              >
+                @if (following) {
+                  <span class="follow-label">Seguindo</span>
+                  <span class="unfollow-label">Deixar de seguir</span>
+                } @else {
+                  Seguir
+                }
+              </button>
+            }
+          </div>
+        </div>
+        @if (draft.kind) {
+          <div class="photo-confirm enter" role="group" aria-label="Confirmar nova imagem">
+            <p>
+              <strong>{{ draft.kind === "cover" ? "Nova capa" : "Nova foto de perfil" }}</strong>
+              <span class="muted">Confira a prévia acima antes de salvar.</span>
+            </p>
+            <div class="form-actions">
+              <button type="button" class="quiet" [disabled]="photo.busy" (click)="cancelImage()">Cancelar</button>
+              <button type="button" class="primary" [disabled]="photo.busy" (click)="saveImage()">
+                @if (photo.busy) {
+                  <span class="spinner" aria-hidden="true"></span> Salvando…
+                } @else {
+                  <app-icon name="check"></app-icon> Salvar
+                }
+              </button>
+            </div>
+          </div>
+        }
+        <app-status [state]="photo"></app-status>
+        <div class="profile-identity">
+          <h1>{{ person.name }}</h1>
+          <p class="muted">&#64;{{ person.username }}</p>
+        </div>
+        @if (person.bio) {
+          <p class="body-text profile-bio">{{ person.bio }}</p>
+        }
+        @if (person.city || website) {
+          <ul class="profile-meta">
+            @if (person.city) {
+              <li><app-icon name="map-pin"></app-icon>{{ person.city }}</li>
+            }
+            @if (website) {
+              <li>
+                <app-icon name="link"></app-icon>
+                <a [href]="website" target="_blank" rel="noopener noreferrer">{{ websiteLabel }}</a>
+              </li>
+            }
+          </ul>
+        }
+        <p class="profile-stats">
+          @for (tab of peopleTabs; track tab.kind) {
+            <button type="button" class="stat-link" (click)="selectTab(tab.kind)">
+              <strong>{{ counts?.[tab.kind] ?? "–" }}</strong>
+              <span>{{ tab.kind === "following" ? "Seguindo" : counts?.followers === 1 ? "Seguidor" : "Seguidores" }}</span>
+            </button>
+          }
+        </p>
+        <app-status [state]="relationship" [retry]="true" (attempt)="loadRelationship()"></app-status>
+        <app-status [state]="followChange" label="Atualizando conexão…"></app-status>
+        <nav class="profile-tabs" aria-label="Conteúdo do perfil">
+          @for (tab of tabs; track tab.label) {
+            <button
+              type="button"
+              class="profile-tab"
+              [attr.aria-current]="kind === tab.kind ? 'page' : null"
+              (click)="selectTab(tab.kind)"
+            >
+              <app-icon [name]="tab.icon"></app-icon>{{ tab.label }}
+            </button>
+          }
+        </nav>
+      </section>
+      @if (own && editing) {
+        <app-update
+          [profile]="person"
+          (saved)="applyProfile($event)"
+          (closed)="editing = false"
+        ></app-update>
+      }
+      @if (kind) {
+        <section class="surface people-list" [attr.aria-label]="kind === 'followers' ? 'Seguidores' : 'Seguindo'">
+          <app-status
+            [state]="people.request"
+            [retry]="true"
+            (attempt)="people.load()"
+          ></app-status>
+          @if (people.total === 0) {
+            <div class="empty-feed">
+              <span class="empty-icon"><app-icon name="users"></app-icon></span>
+              <p class="muted">
+                {{ kind === "followers" ? "Ninguém segue este perfil ainda." : "Este perfil ainda não segue ninguém." }}
+              </p>
+            </div>
+          }
+          @for (user of people.items; track trackId($index, user)) {
+            <app-person-link [person]="user" [arrow]="true"></app-person-link>
+          }
+          @if (people.total && !people.last) {
+            <button [disabled]="people.request.busy" (click)="people.load()">
+              Carregar mais
+            </button>
+          }
+        </section>
+      }
+      <app-posts #feed [scope]="scope" [showTitle]="false" [hidden]="!!kind"></app-posts>
+    }
+  </main>
+  <app-right-bar></app-right-bar>
+</div>

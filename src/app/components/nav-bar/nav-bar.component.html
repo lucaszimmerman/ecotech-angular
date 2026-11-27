@@ -1,0 +1,81 @@
+<header class="topbar">
+  <nav class="topbar-inner" aria-label="Menu principal">
+    <a class="brand" routerLink="/home"
+      ><span class="brand-mark" aria-hidden="true"></span>EcoTech</a
+    >
+    <div
+      class="people-search"
+      (keydown.escape)="open = false"
+      (focusout)="closeSearch($event)"
+    >
+      <app-icon class="search-icon" name="search"></app-icon>
+      <input
+        type="search"
+        aria-label="Pesquisar pessoas"
+        placeholder="Pesquisar pessoas"
+        [value]="query"
+        (input)="search($any($event.target).value)"
+        (focus)="open = !!query.trim()"
+      />
+      @if (open) {
+        <section class="surface search-results" aria-label="Resultados">
+          @if (waiting) {
+            <p role="status">Buscando…</p>
+          }
+          @if (!waiting) {
+            <app-status
+              [state]="results.request"
+              [retry]="true"
+              (attempt)="results.load()"
+            ></app-status>
+            @if (results.total === 0) {
+              <p>Nenhuma pessoa encontrada.</p>
+            }
+            @for (person of results.items; track trackId($index, person)) {
+              <app-person-link [person]="person" [size]="32" (click)="search('')"></app-person-link>
+            }
+            @if (results.total && !results.last) {
+              <button
+                type="button"
+                [disabled]="results.request.busy"
+                (click)="results.load()"
+              >
+                Mais resultados
+              </button>
+            }
+          }
+        </section>
+      }
+    </div>
+    @if (auth.currentUser | async; as viewer) {
+      <div class="actions nav-actions">
+        <button
+          class="icon-button theme-toggle"
+          type="button"
+          [attr.aria-pressed]="(theme.darkMode | async) === true"
+          [attr.aria-label]="(theme.darkMode | async) ? 'Usar tema claro' : 'Usar tema escuro'"
+          [title]="(theme.darkMode | async) ? 'Usar tema claro' : 'Usar tema escuro'"
+          (click)="theme.toggleDarkMode()"
+        >
+          <app-icon [name]="(theme.darkMode | async) ? 'sun' : 'moon'"></app-icon>
+        </button>
+        <a
+          class="nav-profile person"
+          [routerLink]="['/perfil', viewer.id]"
+          aria-label="Meu perfil"
+        >
+          <img
+            [src]="viewer.profileImageUrl | mediaUrl"
+            width="36"
+            height="36"
+            alt=""
+          />
+          <span>{{ viewer.name }}</span>
+        </a>
+        <button class="quiet nav-logout" type="button" (click)="logout()">
+          <app-icon name="logout"></app-icon><span class="nav-button-label">Sair</span>
+        </button>
+      </div>
+    }
+  </nav>
+</header>

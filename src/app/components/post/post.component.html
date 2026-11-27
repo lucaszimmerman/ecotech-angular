@@ -1,0 +1,157 @@
+<article class="surface enter post-card" [class.post-link]="!isOpen" (click)="openPost($event)">
+  <header class="post-header">
+    <a class="person post-author" [routerLink]="['/perfil', post.user.id]" [title]="'Ver perfil de ' + post.user.name">
+      <img
+        class="avatar"
+        [src]="post.user.profileImageUrl | mediaUrl"
+        width="44"
+        height="44"
+        alt=""
+        loading="lazy"
+        (error)="avatarFailed($event)"
+      />
+      <span>
+        <strong>{{ post.user.name }}</strong>
+        <small>&#64;{{ post.user.username }}</small>
+      </span>
+    </a>
+    <a class="post-time" [routerLink]="['/post', post.id]" title="Abrir publicação">
+      <time [attr.datetime]="post.createdAt">{{ post.createdAt | apiDate }}</time>
+    </a>
+    <app-menu label="Opções da publicação">
+      <a class="menu-item" [routerLink]="['/post', post.id]">
+        <app-icon name="link"></app-icon> Abrir publicação
+      </a>
+      <button type="button" class="menu-item" (click)="toggleLikers()">
+        <app-icon name="users"></app-icon> Ver quem curtiu
+      </button>
+      @if (canEdit) {
+        <button type="button" class="menu-item" [disabled]="edit.busy || remove.busy" (click)="startEditing()">
+          <app-icon name="edit"></app-icon> {{ editing ? "Fechar edição" : "Editar publicação" }}
+        </button>
+        <button type="button" class="menu-item danger" [disabled]="remove.busy || edit.busy" (click)="delete()">
+          <app-icon name="trash"></app-icon> Excluir publicação
+        </button>
+      }
+    </app-menu>
+  </header>
+
+  <p class="body-text">{{ post.content }}</p>
+  @if (post.imageUrl && !imageFailed) {
+    <img
+      class="post-image"
+      [src]="post.imageUrl | mediaUrl"
+      alt="Imagem da publicação"
+      loading="lazy"
+      (error)="renewImage()"
+    />
+  }
+  @if (imageFailed) {
+    <app-status [state]="mediaRequest" label="Atualizando imagem…"></app-status>
+  }
+  @if (imageFailed && !mediaRequest.busy) {
+    <p class="muted">Imagem indisponível.</p>
+  }
+
+  <div class="post-actions">
+    <button
+      type="button"
+      class="action-button like-button"
+      [attr.aria-pressed]="post.likedByCurrentUser"
+      [attr.aria-label]="(post.likedByCurrentUser ? 'Remover curtida' : 'Curtir') + ', ' + post.likeCount + ' curtidas'"
+      [title]="post.likedByCurrentUser ? 'Remover curtida' : 'Curtir'"
+      [disabled]="like.busy || status.busy || likeUnknown"
+      (click)="toggleLike()"
+    >
+      <app-icon name="heart" [filled]="post.likedByCurrentUser" [class.heart-pop]="post.likedByCurrentUser"></app-icon>
+      <span>{{ post.likeCount }}</span>
+    </button>
+    <button
+      type="button"
+      class="action-button"
+      [attr.aria-expanded]="showComments"
+      [attr.aria-label]="post.commentCount + ' comentários'"
+      title="Comentários"
+      (click)="showComments = !showComments"
+    >
+      <app-icon name="comment"></app-icon>
+      <span>{{ post.commentCount }}</span>
+    </button>
+    <button type="button" class="action-button" [attr.aria-expanded]="showShare" (click)="share()">
+      <app-icon name="share"></app-icon>
+      <span>Compartilhar</span>
+    </button>
+  </div>
+  <app-status [state]="like" label="Atualizando curtida…"></app-status>
+  <app-status [state]="status" [retry]="true" (attempt)="refreshLike()"></app-status>
+
+  @if (showLikers) {
+    <section class="subsection enter" aria-label="Quem curtiu">
+      <header class="subsection-header">
+        <h3>Quem curtiu</h3>
+        <button type="button" class="icon-button" aria-label="Fechar lista de curtidas" (click)="toggleLikers()">
+          <app-icon name="close"></app-icon>
+        </button>
+      </header>
+      <app-status [state]="likers.request" [retry]="true" (attempt)="likers.load()"></app-status>
+      @if (likers.total === 0) {
+        <p class="muted">Ninguém curtiu ainda.</p>
+      }
+      @for (user of likers.items; track trackId($index, user)) {
+        <app-person-link [person]="user"></app-person-link>
+      }
+      @if (likers.total && !likers.last) {
+        <button type="button" [disabled]="likers.request.busy" (click)="likers.load()">Carregar mais</button>
+      }
+    </section>
+  }
+
+  @if (showShare) {
+    <section class="subsection enter" aria-label="Compartilhar">
+      <label>Link da publicação
+        <span class="input-group">
+          <input readonly [value]="shareLink" (focus)="$any($event.target).select()" />
+          <button type="button" class="secondary" (click)="copy()">
+            <app-icon [name]="copied ? 'check' : 'link'"></app-icon> {{ copied ? "Copiado" : "Copiar" }}
+          </button>
+        </span>
+      </label>
+      @if (copyFailed && !copied) {
+        <p role="status" class="muted">Selecione o link e copie pelo navegador.</p>
+      }
+    </section>
+  }
+
+  @if (editing) {
+    <form class="subsection enter" (ngSubmit)="save()">
+      <label>Texto da publicação
+        <textarea name="content" [(ngModel)]="content" rows="3" maxlength="2000" required></textarea>
+      </label>
+      <app-char-count [value]="content" [min]="5" [max]="2000"></app-char-count>
+      <label class="file-trigger">
+        <app-icon name="image"></app-icon> {{ post.imageUrl || file ? "Trocar imagem" : "Adicionar imagem" }}
+        <input #image class="visually-hidden" type="file" [accept]="types" [disabled]="edit.busy" (change)="choose(image)" />
+      </label>
+      @if (preview) {
+        <img class="preview" [src]="preview" alt="Prévia da imagem" />
+      }
+      @if (post.imageUrl && !file) {
+        <label class="inline"><input name="remove" type="checkbox" [(ngModel)]="removeImage" /> Remover imagem atual</label>
+      }
+      <div class="form-actions">
+        <button type="button" class="quiet" [disabled]="edit.busy" (click)="startEditing()">Cancelar</button>
+        <button class="primary" [disabled]="content.trim().length < 5 || edit.busy || refreshNeeded">Salvar alterações</button>
+      </div>
+    </form>
+  }
+  <app-status [state]="edit" label="Atualizando publicação…"></app-status>
+  <app-status [state]="remove" label="Excluindo publicação…"></app-status>
+  @if (refreshNeeded) {
+    <button type="button" [disabled]="edit.busy" (click)="reload()">
+      <app-icon name="refresh"></app-icon> Atualizar publicação
+    </button>
+  }
+  @if (showComments) {
+    <app-comments [postId]="post.id" (countChanged)="post.commentCount = $event"></app-comments>
+  }
+</article>

@@ -1,0 +1,13 @@
+<aside class="surface sidebar people-card">
+  <h2><app-icon name="user-plus"></app-icon> Conheça pessoas</h2>
+  <app-status [state]="people.request" [retry]="true" (attempt)="people.load()"></app-status>
+  @for (person of others; track trackId($index, person)) {
+    <app-person-link class="people-row" [person]="person" [arrow]="true"></app-person-link>
+  }
+  @if (people.total !== null && !others.length && people.last) {
+    <p class="muted">Nenhum outro perfil encontrado.</p>
+  }
+  @if (people.total && !people.last) {
+    <button class="secondary" type="button" [disabled]="people.request.busy" (click)="people.load()">Ver mais pessoas</button>
+  }
+</aside>
